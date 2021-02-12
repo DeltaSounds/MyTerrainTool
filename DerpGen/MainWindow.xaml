@@ -52,7 +52,7 @@
 					</StackPanel>
 
 					<StackPanel Grid.Column="1">
-						<TextBox Name="inpSeed" Margin="2" Text="{Binding }"/>
+						<TextBox Name="inpSeed" Margin="2" Text="2993"/>
 						<TextBox Name="inpScale" Margin="2" Text="200"/>
 						<TextBox Name="inpOct" Margin="2" Text="3"/>
 						<TextBox Name="inpPer" Margin="2" Text="0"/>

@@ -74,9 +74,8 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Math\Noise.cs" />
-    <Compile Include="Math\Params.cs" />
+    <Compile Include="Math\EPerlinNoise.cs" />
     <Compile Include="Math\Vector2.cs" />
-    <Compile Include="Renderer.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
