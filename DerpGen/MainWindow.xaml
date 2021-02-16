@@ -13,8 +13,8 @@
 			<Menu DockPanel.Dock="Top">
 				<MenuItem Header="_File">
 					<MenuItem Header="_New" />
-					<MenuItem Header="_Open" />
-					<MenuItem Header="_Save" />
+					<MenuItem Header="_Open" Click="OnLoad"/>
+					<MenuItem Header="_Save" Click="OnSave"/>
 					<MenuItem Header="_Save as..." />
 					<MenuItem Header="_Export as PNG" />
 					<Separator />
@@ -36,7 +36,7 @@
 			</Grid.ColumnDefinitions>
 
 			<StackPanel Grid.Column="0">
-				<TextBlock Text="Noise Settings" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+				<TextBlock Text="Noise Settings" HorizontalAlignment="Center" Margin="0,0,0,20" FontSize="16"/>
 
 				<Grid>
 					<Grid.ColumnDefinitions>
@@ -44,19 +44,45 @@
 						<ColumnDefinition Width="*" />
 					</Grid.ColumnDefinitions>
 					<StackPanel Grid.Column="0">
-						<TextBlock Text="Seed" Margin="2"/>
-						<TextBlock Text="Noise Scale" Margin="2"/>
-						<TextBlock Text="Octaves" Margin="2"/>
-						<TextBlock Text="Persistence" Margin="2"/>
-						<TextBlock Text="Lacunarity" Margin="2"/>
+						<TextBlock Text="Map Size" Margin="3.1"/>
+						<TextBlock Text="Seed" Margin="3.1"/>
+						<TextBlock Text="Noise Scale" Margin="3.1"/>
+						<TextBlock Text="Octaves" Margin="3.1"/>
+						<TextBlock Text="Persistence" Margin="3.1"/>
+						<TextBlock Text="Lacunarity" Margin="3.1"/>
 					</StackPanel>
 
 					<StackPanel Grid.Column="1">
-						<TextBox Name="inpSeed" Margin="2" Text="2993"/>
-						<TextBox Name="inpScale" Margin="2" Text="200"/>
-						<TextBox Name="inpOct" Margin="2" Text="3"/>
-						<TextBox Name="inpPer" Margin="2" Text="0"/>
-						<TextBox Name="inpLac" Margin="2" Text="0"/>
+						<TextBox Name="inpSize" Margin="2" Text="{Binding MapSize, Mode=TwoWay }"/>
+
+						<Grid>
+							<Grid.ColumnDefinitions>
+								<ColumnDefinition Width="*" />
+								<ColumnDefinition Width="*" />
+							</Grid.ColumnDefinitions>
+							<TextBox Name="inpSeed" Margin="2" Text="{Binding Seed, Mode=TwoWay }" Grid.Column="0"/>
+							<Button Content="Random" Grid.Column="1" Margin="2" Click="RandomizeSeed"/>
+						</Grid>
+						<TextBox Name="inpScale" Margin="2" Text="{Binding Scale, Mode=TwoWay}"/>
+						<Grid>
+							<Grid.ColumnDefinitions>
+								<ColumnDefinition Width="90" />
+								<ColumnDefinition Width="*" />
+							</Grid.ColumnDefinitions>
+							<Slider Name="inpOct" Margin="2" Minimum="1" Maximum="10" Value="{Binding Octaves, Mode=TwoWay}" Grid.Column="0" />
+							<TextBox Margin="2" Text="{Binding Octaves, Mode=TwoWay}" Grid.Column="1"/>
+						</Grid>
+
+						<Grid>
+							<Grid.ColumnDefinitions>
+								<ColumnDefinition Width="90" />
+								<ColumnDefinition Width="3*" />
+								<ColumnDefinition Width="4*"/>
+							</Grid.ColumnDefinitions>
+							<Slider Name="inpPer" Margin="2" Minimum="0" Maximum="1" Value="{Binding Persistence, Mode=TwoWay}" Grid.Column="0"/>
+							<TextBox Margin="2" Text="{Binding Persistence, Mode=TwoWay}" Grid.Column="1" Grid.ColumnSpan="2"/>
+						</Grid>
+						<TextBox Name="inpLac" Margin="2" Text="{Binding Lacunarity, Mode=TwoWay}"/>
 					</StackPanel>
 				</Grid>
 
@@ -72,7 +98,7 @@
 					</StackPanel>
 
 					<StackPanel Grid.Column="1">
-						<TextBox Name="inpRadius" Margin="2"  Text="10"/>
+						<TextBox Name="inpRadius" Margin="2"  Text="{Binding Radius, Mode=TwoWay}"/>
 					</StackPanel>
 				</Grid>
 
@@ -94,11 +120,14 @@
 					</StackPanel>
 				</Grid>
 
+
 			</StackPanel>
 
-			<StackPanel Grid.Column="1">
-				<Image x:Name="MainImage" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="20,0"/>
-			</StackPanel>
+			<Button Content="Generate" Margin="5, 20" Click="UpdateHeightMap" VerticalAlignment="Bottom"/>
+
+			<Grid Grid.Column="1">
+				<Image x:Name="MainImage"/>
+			</Grid>
 		</Grid>
 	</Grid>
 </Window>

@@ -5,6 +5,7 @@ namespace DerpGen
 {
 	class EMath
 	{
+
 		public static float Clamp01(float value)
 		{
 			if (value < 0F)
@@ -28,6 +29,7 @@ namespace DerpGen
 			return a + (b - a) * Clamp01(t);
 		}
 
+		#region // https://github.com/Xpktro/simplexnoise/blob/master/SimplexNoise/Noise.cs
 		public static float Gradient(int hash, float x, float y)
 		{
 			int newHash = hash & 7;
@@ -79,6 +81,8 @@ namespace DerpGen
 			int jj = j % 256;
 
 			float t0 = 0.5f - x0 * x0 - y0 * y0;
+
+
 			if (t0 < 0.0f) n0 = 0.0f;
 			else
 			{
@@ -137,5 +141,15 @@ namespace DerpGen
 			138,236,205,93,222,114,67,29,24,72,243,141,128,195,78,66,215,61,156,180
 		};
 
+		public static void SetSeed(int seed)
+		{
+			System.Random rnd = new System.Random(seed);
+
+			for (int i = 0; i < perm.Length; i++)
+			{
+				perm[i] = (byte)rnd.Next(1, 254);
+			}
+		}
+		#endregion
 	}
 }

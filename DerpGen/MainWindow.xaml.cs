@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
@@ -24,83 +26,150 @@ namespace DerpGen
 	/// </summary>
 	public partial class MainWindow : Window
 	{
-		private string _actualFilename;
-		
-		private int width = 128;
-		private int height = 128;
-		private int seed = 349;
-		private float scale = 32;
-		private int octaves = 4;
-		private float persistence = 0.5f;
-		private float lacunarity = 2;
-		private Vector2 offset = new Vector2(16, 8);
-		private float radius = 35;
+		private static readonly string COMPANY_NAME = "SAE";
+		private static readonly string APPLICATION_NAME = "DerpGen";
+
+		private string _currentFilePath;
+		private static string _configCompanyPath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), COMPANY_NAME);
+		private static string _configApplicationPath = System.IO.Path.Combine(_configCompanyPath, APPLICATION_NAME);
+		private static string _configPath = System.IO.Path.Combine(_configApplicationPath, "Config.json");
+		private Config _config;
+
+		public Parameters Parameter = new Parameters();
+		public Renderer Render = new Renderer();
+		public Random random = new Random();
 
 		public MainWindow()
 		{
 			InitializeComponent();
-			
-			float[,] noiseMap = Noise.GenerateNoiseMap(width, height, seed, scale, octaves, persistence, lacunarity, offset, radius);
+			DataContext = Parameter;
+			LoadConfig();
 
+			Parameter.PropertyChanged += UpdateAll;
 
-			int w = noiseMap.GetLength(0);
-			int h = noiseMap.GetLength(1);
-
-			WriteableBitmap bitmap = new WriteableBitmap(w, h, 96, 96, PixelFormats.Pbgra32, null);
-
-
-			uint[] pixels = new uint[w * h];
-
-			byte r;
-			byte g;
-			byte b;
-			byte a;
-
-
-			for (int x = 0; x < h; x++)
-			{
-				for (int y = 0; y < w; y++)
-				{
-					int i = y * w + x;
-
-					r = (byte)(noiseMap[x, y] * 255);
-					g = (byte)(noiseMap[x, y] * 255);
-					b = (byte)(noiseMap[x, y] * 255);
-					a = 255;
-
-					pixels[i] = (uint)((a << 24) + (r << 16) + (g << 8) + b);
-				}
-			}
-
-			// apply pixels to bitmap
-			bitmap.WritePixels(new Int32Rect(0, 0, w, h), pixels, w * 4, 0);
-
-			// set image source to the new bitmap
-			this.MainImage.Source = bitmap;
+			Render.DrawHeightMap(this, Parameter);
 		}
 
-		private void OnSaveCommandExecuted(object sender, ExecutedRoutedEventArgs e)
+		private void UpdateAll(object sender, PropertyChangedEventArgs e)
 		{
-			if(_actualFilename == null)
+			if(Parameter.UpdateOnValueChanged)
 			{
-				_actualFilename = GetFilename();
+				Render.DrawHeightMap(this, Parameter);
 			}
-
-			BinaryFormatter bf = new BinaryFormatter();
-			FileStream fs = File.OpenWrite(_actualFilename);
-			bf.Serialize(fs, seed);
 		}
 
-		private string GetFilename()
+		private void LoadConfig()
 		{
-			SaveFileDialog sfd = new SaveFileDialog();
-			
+			var loadConfig = ConfigLoader.Load(_configPath);
+
+			if(loadConfig != null)
+			{
+				_config = loadConfig;
+			}
+			else
+			{
+				_config = new Config();
+
+				Directory.CreateDirectory(_configCompanyPath);
+				Directory.CreateDirectory(_configApplicationPath);
+			}
+
+			ApplyConfig();
+		}
+
+		private void ApplyConfig()
+		{
+			// Set Window Size
+			this.Width = _config.Width;
+			this.Height = _config.Height;
+
+			// Set Parameters
+			Parameter.Seed = _config.Seed;
+			Parameter.Scale = _config.Scale;
+			Parameter.Octaves = _config.Octaves;
+			Parameter.Persistence = _config.Persistence;
+			Parameter.Lacunarity = _config.Lacunarity;
+			Parameter.Radius = _config.Radius;
+			Parameter.OffsetX = _config.OffsetX;
+			Parameter.OffsetY = _config.OffsetY;
+
+			Parameter.UpdateOnValueChanged = _config.UpdateOnValueChanged;
+			Parameter.RandomizeSeedOnStart = _config.RandomizeSeedOnStart;
+		}
+
+		private void UpdateHeightMap(object sender, RoutedEventArgs e)
+		{
+			Render.DrawHeightMap(this, Parameter);
+		}
+
+		private void RandomizeSeed(object sender, RoutedEventArgs e)
+		{
+			Parameter.Seed = random.Next(1, int.MaxValue);
+			inpSeed.Text = Parameter.Seed.ToString();
+		}
+
+		private void OnSave(object sender, RoutedEventArgs e)
+		{
+			string savePath = GetSavePath();
+
+			if(_currentFilePath == null && savePath != null)
+			{
+				_currentFilePath = savePath;
+			}
+
+			SaveManager.Save(Parameter, _currentFilePath);
+		}
+
+		private void OnSaveAs(object sender, RoutedEventArgs e)
+		{
+			SaveManager.Save(Parameter, GetSavePath());
+		}
+
+		private void OnLoad(object sender, RoutedEventArgs e)
+		{
+			var loadData = SaveManager.Load(GetLoadPath());
+
+			if (loadData != null)
+			{
+				Parameter = loadData;
+				
+				DataContext = Parameter;
+				Render.DrawHeightMap(this, Parameter);
+			}
+
+		}
+
+		private string GetLoadPath()
+		{
+			OpenFileDialog openFileDialog = new OpenFileDialog();
+
+			openFileDialog.Filter = "Data File | *.dat";
+			openFileDialog.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+			bool? result = openFileDialog.ShowDialog();
+
+			if (result.HasValue && result.Value)
+			{
+				return openFileDialog.FileName;
+			}
+
+			return null;
+		}
+
+		private string GetSavePath()
+		{
+			SaveFileDialog saveFileDialog = new SaveFileDialog();
+
+			saveFileDialog.DefaultExt = "dat";
+
 			// File format filters
-			sfd.Filter = "*.dat | Data Files | *.txt | Text Files";
-			sfd.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-			bool ? result = sfd.ShowDialog();
+			saveFileDialog.Filter = "Data File | *.dat";
+			saveFileDialog.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+			bool? result = saveFileDialog.ShowDialog();
 
-			if (result.HasValue && result.Value) return sfd.FileName;
+			if (result.HasValue && result.Value)
+			{
+				return saveFileDialog.FileName;
+			}
 
 			return null;
 		}

@@ -9,15 +9,7 @@ namespace DerpGen
 			float[,] noiseMap = new float[mapWidth, mapHeight];
 			Vector2 mapSize = new Vector2(mapWidth, mapHeight);
 
-			System.Random prng = new System.Random(seed);
-			Vector2[] octaveOffsets = new Vector2[octaves];
-
-			for (int i = 0; i < octaves; i++)
-			{
-				float offsetX = prng.Next(-100000, 100000) + offset.x;
-				float offsetY = prng.Next(-100000, 100000) + offset.y;
-				octaveOffsets[i] = new Vector2(offsetX, offsetY);
-			}
+			EMath.SetSeed(seed);
 
 			if (scale <= 0)
 				scale = 0.0001f;
@@ -42,7 +34,7 @@ namespace DerpGen
 						float sampleX = x / scale * frequency;
 						float sampleY = y / scale * frequency;
 
-						float perlinValue = EMath.PerlinNoise(sampleX, sampleY) * 2 - 1;
+						float perlinValue = EMath.PerlinNoise(sampleX, sampleY) / 2 - 1;
 						noiseHeight += perlinValue * amplitude;
 
 						amplitude *= persistance;
