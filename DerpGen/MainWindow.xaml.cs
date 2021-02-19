@@ -32,12 +32,13 @@ namespace DerpGen
 		private string _currentFilePath;
 		private static string _configCompanyPath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), COMPANY_NAME);
 		private static string _configApplicationPath = System.IO.Path.Combine(_configCompanyPath, APPLICATION_NAME);
-		private static string _configPath = System.IO.Path.Combine(_configApplicationPath, "Config.json");
+		private static string _configPath = System.IO.Path.Combine(_configApplicationPath, "config.json");	
 		private Config _config;
 
 		public Parameters Parameter = new Parameters();
 		public Renderer Render = new Renderer();
 		public Random random = new Random();
+		public List<string> RecentList = new List<string>();
 
 		public MainWindow()
 		{
@@ -45,24 +46,30 @@ namespace DerpGen
 			DataContext = Parameter;
 			LoadConfig();
 
-			Parameter.PropertyChanged += UpdateAll;
+			Closed += OnExitApplication;
 
 			Render.DrawHeightMap(this, Parameter);
 		}
 
-		private void UpdateAll(object sender, PropertyChangedEventArgs e)
+		private void OnExitApplication(object sender, EventArgs e)
 		{
-			if(Parameter.UpdateOnValueChanged)
+			if (_config != null)
 			{
-				Render.DrawHeightMap(this, Parameter);
+				ConfigLoader.Save(_config, _configPath);
 			}
+		}
+
+		private void OpenDocumentation(object sender, RoutedEventArgs e)
+		{
+			DocWindow docWindow = new DocWindow();
+			docWindow.ShowDialog();
 		}
 
 		private void LoadConfig()
 		{
 			var loadConfig = ConfigLoader.Load(_configPath);
 
-			if(loadConfig != null)
+			if (loadConfig != null)
 			{
 				_config = loadConfig;
 			}
@@ -93,8 +100,118 @@ namespace DerpGen
 			Parameter.OffsetX = _config.OffsetX;
 			Parameter.OffsetY = _config.OffsetY;
 
-			Parameter.UpdateOnValueChanged = _config.UpdateOnValueChanged;
-			Parameter.RandomizeSeedOnStart = _config.RandomizeSeedOnStart;
+			Parameter.RandomizeSeedOnStart = _config.RandomizeSeedOnGenerated;
+
+			// Load Recent List
+			for (int i = 0; i < _config.recentFilePaths.Count; i++)
+			{
+				if(File.Exists(_config.recentFilePaths[i]))
+				{
+					RecentList.Add(_config.recentFilePaths[i]);
+				}
+				else
+				{
+					_config.recentFilePaths.RemoveAt(i);
+				}
+			}
+
+			UpdateRecentFiles();
+
+		}
+
+		private void UpdateRecentFiles()
+		{
+			recentMenuItem.Items.Clear();
+
+			for (int i = 0; i < RecentList.Count; i++)
+			{
+
+				// Create a new menu item & set name
+				MenuItem menuItem = new MenuItem();
+				menuItem.Header = RecentList[i];
+
+				recentMenuItem.Items.Add(menuItem);
+			}
+
+			Separator sep = new Separator();
+			recentMenuItem.Items.Add(sep);
+
+			MenuItem clear = new MenuItem();
+			clear.Header = "Clear List";
+			clear.Click += ClearList;
+
+			recentMenuItem.Items.Add(clear);
+		}
+
+		private void ClearList(object sender, RoutedEventArgs e)
+		{
+			RecentList.Clear();
+			_config.recentFilePaths.Clear();
+			UpdateRecentFiles();
+		}
+
+		private void AddRecentItem(string fileName)
+		{
+			Console.WriteLine("========================** function has started! **========================");
+
+			if (RecentList.Count > 0)
+			{
+				Console.WriteLine("RecentList.Count is more than 0");
+				for (int i = 0; i < RecentList.Count; i++)
+				{
+					Console.WriteLine($"for loop running at index: {i}");
+
+					if (RecentList[i] == fileName)
+					{
+						Console.WriteLine("FilePath already exists!! ");
+						Console.WriteLine("Updating Config \n Updating Visuals");
+						Console.WriteLine("========================** Terminating function **========================");
+						_config.recentFilePaths = RecentList;
+						UpdateRecentFiles();
+						return;
+					}
+
+					Console.WriteLine($"Recent List has added path: {fileName}");
+					RecentList.Add(fileName);
+				}
+			}
+			else
+			{
+				Console.WriteLine($"Recent list is below 0, Adding file path: {fileName} to List");
+				RecentList.Add(fileName);
+			}
+
+			Console.WriteLine("Updating Config \n Updating Visuals");
+			_config.recentFilePaths = RecentList;
+			UpdateRecentFiles();
+			Console.WriteLine("========================** Terminating function **========================");
+		}
+
+		private void OpenPropertiesWindow(object sender, RoutedEventArgs e)
+		{
+			PropertiesWindow PropWindow = new PropertiesWindow(Parameter);
+			PropWindow.ShowDialog();
+		}
+
+		private void ResetParameters(object sender, RoutedEventArgs e)
+		{
+			MessageBoxResult result = MessageBox.Show("Any unsaved changes will be lost! do you wish to proceed?", "Warning!", MessageBoxButton.YesNo);
+
+			if (result == MessageBoxResult.Yes)
+			{
+				ApplyConfig();
+				Render.DrawHeightMap(this, Parameter);
+			}
+		}
+
+		private void ExportAsPNG(object sender, RoutedEventArgs e)
+		{
+			using (FileStream fileStream = File.Create("DrawHeightMap.png"))
+			{
+				PngBitmapEncoder encoder = new PngBitmapEncoder();
+				encoder.Frames.Add(BitmapFrame.Create(MainImage.Source as BitmapSource));
+				encoder.Save(fileStream);
+			}
 		}
 
 		private void UpdateHeightMap(object sender, RoutedEventArgs e)
@@ -110,11 +227,16 @@ namespace DerpGen
 
 		private void OnSave(object sender, RoutedEventArgs e)
 		{
-			string savePath = GetSavePath();
 
-			if(_currentFilePath == null && savePath != null)
+
+			if (_currentFilePath == null)
 			{
-				_currentFilePath = savePath;
+				string savePath = GetSavePath();
+
+				if (savePath != null)
+				{
+					_currentFilePath = savePath;
+				}
 			}
 
 			SaveManager.Save(Parameter, _currentFilePath);
@@ -122,7 +244,12 @@ namespace DerpGen
 
 		private void OnSaveAs(object sender, RoutedEventArgs e)
 		{
-			SaveManager.Save(Parameter, GetSavePath());
+			string savePath = GetSavePath();
+
+			if (savePath == null)
+				return;
+
+			SaveManager.Save(Parameter, savePath);
 		}
 
 		private void OnLoad(object sender, RoutedEventArgs e)
@@ -132,11 +259,22 @@ namespace DerpGen
 			if (loadData != null)
 			{
 				Parameter = loadData;
-				
+
 				DataContext = Parameter;
 				Render.DrawHeightMap(this, Parameter);
 			}
 
+		}
+
+		private void ExitApplication(object sender, CancelEventArgs e)
+		{
+			//MessageBoxResult result = MessageBox.Show("Any unsaved changes will be lost! do you wish to proceed?", "Warning!", MessageBoxButton.YesNo);
+			//
+			//if (result == MessageBoxResult.No)
+			//{
+			//	e.Cancel = true;
+			//	return;
+			//}
 		}
 
 		private string GetLoadPath()
@@ -168,6 +306,7 @@ namespace DerpGen
 
 			if (result.HasValue && result.Value)
 			{
+				AddRecentItem(saveFileDialog.FileName);
 				return saveFileDialog.FileName;
 			}
 

@@ -56,3 +56,7 @@ D:\GIT\MyTerrainTool\DerpGen\obj\Debug\DerpGen.exe
 D:\GIT\MyTerrainTool\DerpGen\obj\Debug\DerpGen.pdb
 D:\GIT\MyTerrainTool\DerpGen\bin\Debug\Newtonsoft.Json.dll
 D:\GIT\MyTerrainTool\DerpGen\bin\Debug\Newtonsoft.Json.xml
+D:\GIT\MyTerrainTool\DerpGen\obj\Debug\PropertiesWindow.g.cs
+D:\GIT\MyTerrainTool\DerpGen\obj\Debug\PropertiesWindow.baml
+D:\GIT\MyTerrainTool\DerpGen\obj\Debug\DocWindow.g.cs
+D:\GIT\MyTerrainTool\DerpGen\obj\Debug\DocWindow.baml

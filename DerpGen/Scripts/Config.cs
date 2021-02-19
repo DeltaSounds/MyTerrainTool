@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using System.Collections.Generic;
 using System.IO;
 
 namespace DerpGen
@@ -9,8 +10,8 @@ namespace DerpGen
 		public float PositionX = 0;
 		public float PositionY = 0;
 
-		public float Width = 442;
-		public float Height = 784;
+		public float Width = 784;
+		public float Height = 522;
 
 		public int MapWidth = 300;
 		public int MapHeight = 300;
@@ -23,8 +24,9 @@ namespace DerpGen
 		public float OffsetX = 0;
 		public float OffsetY = 0;
 
-		public bool UpdateOnValueChanged = true;
-		public bool RandomizeSeedOnStart = false;
+		public bool RandomizeSeedOnGenerated = false;
+
+		public List<string> recentFilePaths = new List<string>();
 	}
 
 	public static class ConfigLoader
@@ -43,13 +45,11 @@ namespace DerpGen
 			{
 				return null;
 			}
-
-			
 		}
 
 		public static void Save(Config config, string path)
 		{
-			string configJson = JsonConvert.SerializeObject(config);
+			string configJson = JsonConvert.SerializeObject(config, Formatting.Indented);
 			File.WriteAllText(path, configJson);
 		}
 	}

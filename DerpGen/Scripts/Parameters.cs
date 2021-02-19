@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Windows;
 
 namespace DerpGen
 {
@@ -17,7 +18,8 @@ namespace DerpGen
 		private float _radius = 60;
 		private float _offsetX = 0;
 		private float _offsetY = 0;
-		
+		private bool _randomizeSeedOnGenerated;
+
 		public event PropertyChangedEventHandler PropertyChanged;
 
 		public int MapSize
@@ -139,9 +141,7 @@ namespace DerpGen
 
 		public Vector2 Offset { get => new Vector2(_offsetX, _offsetY); }
 
-		public bool UpdateOnValueChanged { get; set; }
 		public bool RandomizeSeedOnStart { get; set; }
-
 
 		// https://docs.microsoft.com/en-us/dotnet/desktop/wpf/data/how-to-implement-property-change-notification?view=netframeworkdesktop-4.8
 		public void OnValueChanged([CallerMemberName] string name = null)

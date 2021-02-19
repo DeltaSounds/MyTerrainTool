@@ -5,25 +5,30 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DerpGen"
         mc:Ignorable="d"
-        Title="MainWindow" Height="442" Width="784.667">
+        Title="MainWindow" Height="522" Width="784.667" MinWidth="784" MinHeight="522">
 
 
 	<Grid Background="#303030">
 		<DockPanel>
-			<Menu DockPanel.Dock="Top">
+			<Menu x:Name="MainMenu" DockPanel.Dock="Top">
 				<MenuItem Header="_File">
-					<MenuItem Header="_New" />
+					<MenuItem Header="_New" Click="ResetParameters"/>
 					<MenuItem Header="_Open" Click="OnLoad"/>
 					<MenuItem Header="_Save" Click="OnSave"/>
-					<MenuItem Header="_Save as..." />
-					<MenuItem Header="_Export as PNG" />
+					<MenuItem Header="_Save as..." Click="OnSaveAs"/>
+					<MenuItem Header="_Export as PNG" Click="ExportAsPNG"/>
+					<MenuItem Header="_Properties" Click="OpenPropertiesWindow"/>
 					<Separator />
-					<MenuItem Header="_Exit" />
+					<MenuItem Header="_0Exit" />
 				</MenuItem>
 
-				<MenuItem Header="_Edit">
-					<MenuItem Header="_Undo" />
-					<MenuItem Header="_Reddo" />
+				<MenuItem x:Name="recentMenuItem" Header="recent files">
+					<MenuItem Header="Clear List" />
+					<Separator/>
+				</MenuItem>
+
+					<MenuItem Header="Help">
+					<MenuItem Header="_Documentation" Click="OpenDocumentation"/>
 				</MenuItem>
 			</Menu>
 			<TextBox AcceptsReturn="True" />
@@ -53,7 +58,7 @@
 					</StackPanel>
 
 					<StackPanel Grid.Column="1">
-						<TextBox Name="inpSize" Margin="2" Text="{Binding MapSize, Mode=TwoWay }"/>
+						<TextBox Name="inpSize" Margin="2" Text="{Binding MapSize, Mode=TwoWay }" ToolTip="Set the resolution of you heightmap"/>
 
 						<Grid>
 							<Grid.ColumnDefinitions>

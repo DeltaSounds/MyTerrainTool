@@ -17,9 +17,6 @@ namespace DerpGen
 			float maxNoiseHeight = float.MinValue;
 			float minNoiseHeight = float.MaxValue;
 
-			float halfWidth = mapWidth / 2f;
-			float halfHeight = mapHeight / 2f;
-
 			for (int x = 0; x < noiseMap.GetLength(0); x++)
 			{
 				for (int y = 0; y < noiseMap.GetLength(1); y++)
