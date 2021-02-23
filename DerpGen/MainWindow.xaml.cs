@@ -16,6 +16,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 using Accord.Math;
 using Microsoft.Win32;
 
@@ -35,10 +36,14 @@ namespace DerpGen
 		private static string _configPath = System.IO.Path.Combine(_configApplicationPath, "config.json");	
 		private Config _config;
 
+		private readonly BackgroundWorker bgWorker = new BackgroundWorker();
+		private delegate void myDel(WriteableBitmap bitmap);
+
 		public Parameters Parameter = new Parameters();
 		public Renderer Render = new Renderer();
 		public Random random = new Random();
 		public List<string> RecentList = new List<string>();
+		public event ProgressChangedEventHandler ProgressChanged;
 
 		public MainWindow()
 		{
@@ -46,9 +51,72 @@ namespace DerpGen
 			DataContext = Parameter;
 			LoadConfig();
 
-			Closed += OnExitApplication;
+			bgWorker.WorkerReportsProgress = true;
 
-			Render.DrawHeightMap(this, Parameter);
+			bgWorker.DoWork += new DoWorkEventHandler(RenderImage);
+			bgWorker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(GenerateCompleted);
+		}
+
+		private void GenerateCompleted(object sender, RunWorkerCompletedEventArgs e)
+		{
+			if(!e.Cancelled)
+			{
+				MainImage.Source = (WriteableBitmap)e.Result;
+			}
+			else
+			{
+				MessageBox.Show("Generation has been terminated!", "Warning!", MessageBoxButton.OK);
+			}
+		}
+
+		private void RenderImage(object sender, DoWorkEventArgs e)
+		{
+			// https://nerdparadise.com/programming/csharpimageediting
+			
+			float[,] noiseMap = Noise.GenerateNoiseMap(Parameter.MapSize, Parameter.MapSize, Parameter.Seed, Parameter.Scale, Parameter.Octaves, Parameter.Persistence, Parameter.Lacunarity, Parameter.Offset, Parameter.Radius);
+
+			int w = noiseMap.GetLength(0);
+			int h = noiseMap.GetLength(1);
+
+			WriteableBitmap bitmap = new WriteableBitmap(w, h, 96, 96, PixelFormats.Pbgra32, null);
+
+
+			uint[] pixels = new uint[w * h];
+
+			byte r;
+			byte g;
+			byte b;
+			byte a;
+
+
+
+			for (int x = 0; x < h; x++)
+			{
+				for (int y = 0; y < w; y++)
+				{
+					int i = y * w + x;
+
+					r = (byte)(noiseMap[x, y] * 255);
+					g = (byte)(noiseMap[x, y] * 255);
+					b = (byte)(noiseMap[x, y] * 255);
+					a = 255;
+
+					pixels[i] = (uint)((a << 24) + (r << 16) + (g << 8) + b);
+				}
+			}
+
+			// apply pixels to bitmap
+			bitmap.WritePixels(new Int32Rect(0, 0, w, h), pixels, w * 4, 0);
+			var bmp = bitmap;
+			bmp.Freeze();
+			e.Result = bmp;
+
+			//On Aborted
+			if(bgWorker.CancellationPending)
+			{
+				e.Cancel = true;
+				return;
+			}
 		}
 
 		private void OnExitApplication(object sender, EventArgs e)
@@ -100,8 +168,8 @@ namespace DerpGen
 			Parameter.OffsetX = _config.OffsetX;
 			Parameter.OffsetY = _config.OffsetY;
 
-			Parameter.RandomizeSeedOnStart = _config.RandomizeSeedOnGenerated;
-
+			Parameter.RandomizeSeedOnGenerate = _config.RandomizeSeedOnGenerated;
+			DataContext = Parameter;
 			// Load Recent List
 			for (int i = 0; i < _config.recentFilePaths.Count; i++)
 			{
@@ -116,7 +184,7 @@ namespace DerpGen
 			}
 
 			UpdateRecentFiles();
-
+			bgWorker.RunWorkerAsync();
 		}
 
 		private void UpdateRecentFiles()
@@ -129,6 +197,7 @@ namespace DerpGen
 				// Create a new menu item & set name
 				MenuItem menuItem = new MenuItem();
 				menuItem.Header = RecentList[i];
+				menuItem.Click += OpenRecent;
 
 				recentMenuItem.Items.Add(menuItem);
 			}
@@ -143,6 +212,20 @@ namespace DerpGen
 			recentMenuItem.Items.Add(clear);
 		}
 
+		private void OpenRecent(object sender, RoutedEventArgs e)
+		{
+			MenuItem item = (MenuItem)e.Source;
+
+			MessageBoxResult result = MessageBox.Show("Any unsaved changes will be lost! do you wish to proceed?", "Warning!", MessageBoxButton.YesNo);
+
+			if (result == MessageBoxResult.Yes)
+			{
+				Parameter = SaveManager.Load(item.Header.ToString());
+				DataContext = Parameter;
+				bgWorker.RunWorkerAsync();
+			}
+		}
+
 		private void ClearList(object sender, RoutedEventArgs e)
 		{
 			RecentList.Clear();
@@ -152,39 +235,12 @@ namespace DerpGen
 
 		private void AddRecentItem(string fileName)
 		{
-			Console.WriteLine("========================** function has started! **========================");
-
-			if (RecentList.Count > 0)
+			if (!RecentList.Contains(fileName))
 			{
-				Console.WriteLine("RecentList.Count is more than 0");
-				for (int i = 0; i < RecentList.Count; i++)
-				{
-					Console.WriteLine($"for loop running at index: {i}");
-
-					if (RecentList[i] == fileName)
-					{
-						Console.WriteLine("FilePath already exists!! ");
-						Console.WriteLine("Updating Config \n Updating Visuals");
-						Console.WriteLine("========================** Terminating function **========================");
-						_config.recentFilePaths = RecentList;
-						UpdateRecentFiles();
-						return;
-					}
-
-					Console.WriteLine($"Recent List has added path: {fileName}");
-					RecentList.Add(fileName);
-				}
-			}
-			else
-			{
-				Console.WriteLine($"Recent list is below 0, Adding file path: {fileName} to List");
 				RecentList.Add(fileName);
+				_config.recentFilePaths = RecentList;
+				UpdateRecentFiles();
 			}
-
-			Console.WriteLine("Updating Config \n Updating Visuals");
-			_config.recentFilePaths = RecentList;
-			UpdateRecentFiles();
-			Console.WriteLine("========================** Terminating function **========================");
 		}
 
 		private void OpenPropertiesWindow(object sender, RoutedEventArgs e)
@@ -193,30 +249,55 @@ namespace DerpGen
 			PropWindow.ShowDialog();
 		}
 
-		private void ResetParameters(object sender, RoutedEventArgs e)
+		private void OpenNew(object sender, RoutedEventArgs e)
 		{
 			MessageBoxResult result = MessageBox.Show("Any unsaved changes will be lost! do you wish to proceed?", "Warning!", MessageBoxButton.YesNo);
 
 			if (result == MessageBoxResult.Yes)
 			{
-				ApplyConfig();
-				Render.DrawHeightMap(this, Parameter);
+				string savePath = GetSavePath();
+
+				if(savePath != null)
+				{
+					Parameter.MapSize = 256;
+					Parameter.Seed = 100;
+					Parameter.Scale = 80;
+					Parameter.Octaves = 5;
+					Parameter.Persistence = 0.5f;
+					Parameter.Lacunarity = 2;
+					Parameter.Radius = 90;
+					Parameter.OffsetX = 0;
+					Parameter.OffsetY = 0;
+					
+
+					//ApplyConfig();
+					
+					SaveManager.Save(Parameter, savePath);
+					bgWorker.RunWorkerAsync();
+				}
 			}
 		}
 
 		private void ExportAsPNG(object sender, RoutedEventArgs e)
 		{
-			using (FileStream fileStream = File.Create("DrawHeightMap.png"))
+			string path = GetExportPath();
+
+			if(path != null)
 			{
-				PngBitmapEncoder encoder = new PngBitmapEncoder();
-				encoder.Frames.Add(BitmapFrame.Create(MainImage.Source as BitmapSource));
-				encoder.Save(fileStream);
+				using (FileStream fileStream = File.Create(path))
+				{
+					PngBitmapEncoder encoder = new PngBitmapEncoder();
+					encoder.Frames.Add(BitmapFrame.Create(MainImage.Source as BitmapSource));
+					encoder.Save(fileStream);
+					MessageBox.Show("Successfully exported heightmap!", "Success!", MessageBoxButton.OK);
+				}
 			}
+
 		}
 
 		private void UpdateHeightMap(object sender, RoutedEventArgs e)
 		{
-			Render.DrawHeightMap(this, Parameter);
+			bgWorker.RunWorkerAsync();
 		}
 
 		private void RandomizeSeed(object sender, RoutedEventArgs e)
@@ -227,8 +308,6 @@ namespace DerpGen
 
 		private void OnSave(object sender, RoutedEventArgs e)
 		{
-
-
 			if (_currentFilePath == null)
 			{
 				string savePath = GetSavePath();
@@ -246,22 +325,28 @@ namespace DerpGen
 		{
 			string savePath = GetSavePath();
 
-			if (savePath == null)
-				return;
+			if (savePath != null)
+			{
+				SaveManager.Save(Parameter, savePath);
+			}
 
-			SaveManager.Save(Parameter, savePath);
 		}
 
 		private void OnLoad(object sender, RoutedEventArgs e)
 		{
-			var loadData = SaveManager.Load(GetLoadPath());
+			string loadPath = GetLoadPath();
 
-			if (loadData != null)
+			if(loadPath != null)
 			{
-				Parameter = loadData;
+				var loadData = SaveManager.Load(loadPath);
 
-				DataContext = Parameter;
-				Render.DrawHeightMap(this, Parameter);
+				if (loadData != null)
+				{
+					Parameter = loadData;
+
+					DataContext = Parameter;
+					bgWorker.RunWorkerAsync();
+				}
 			}
 
 		}
@@ -287,7 +372,24 @@ namespace DerpGen
 
 			if (result.HasValue && result.Value)
 			{
+				AddRecentItem(openFileDialog.FileName);
 				return openFileDialog.FileName;
+			}
+
+			return null;
+		}
+
+		private string GetExportPath()
+		{
+			SaveFileDialog saveFileDialog = new SaveFileDialog();
+
+			saveFileDialog.Filter = "PNG file | .png";
+			saveFileDialog.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
+			bool? result = saveFileDialog.ShowDialog();
+
+			if (result.HasValue && result.Value)
+			{
+				return saveFileDialog.FileName;
 			}
 
 			return null;

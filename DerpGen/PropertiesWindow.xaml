@@ -5,32 +5,38 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DerpGen"
         mc:Ignorable="d"
-        Title="PropertiesWindow" Height="362" Width="334" MinHeight="362" MaxHeight="362" MinWidth="334" MaxWidth="334">
-	<Grid>
+        Title="Properties" Height="362" Width="334" MinHeight="362" MaxHeight="362" MinWidth="334" MaxWidth="334">
+	<Grid Background="#FF252526">
 		<StackPanel>
-			<TextBlock Text="Properties" HorizontalAlignment="Center" FontSize="16" Margin="10"/>
+			<StackPanel.Background>
+				<LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+					<GradientStop Color="#FF1E1E1F" Offset="0"/>
+					<GradientStop Color="#FF2A2A2C" Offset="1"/>
+				</LinearGradientBrush>
+			</StackPanel.Background>
+			<TextBlock Text="Properties" HorizontalAlignment="Center" FontSize="16" Margin="10" Foreground="White"/>
 			<Grid Margin="10, 10">
 				<Grid.ColumnDefinitions>
 					<ColumnDefinition Width="auto"/>
 					<ColumnDefinition Width="*"/>
 				</Grid.ColumnDefinitions>
 				<StackPanel Grid.Column="0">
-					<TextBlock Text="Randomize seed when generated?" Margin="0,5,0,0"/>
+					<TextBlock Text="Randomize seed when generated?" Margin="0,5,0,0" Foreground="White"/>
 
-					<TextBlock Text="Default Position X" Margin="0,20,0,0"/>
-					<TextBlock Text="Default Position Y" Margin="0,10,0,0"/>
-					<TextBlock Text="Default Width" Margin="0,20,0,0"/>
-					<TextBlock Text="Default Height" Margin="0,10,0,0"/>
+					<TextBlock Text="Default Position X" Margin="0,20,0,0" Foreground="White"/>
+					<TextBlock Text="Default Position Y" Margin="0,10,0,0" Foreground="White"/>
+					<TextBlock Text="Default Width" Margin="0,20,0,0" Foreground="White"/>
+					<TextBlock Text="Default Height" Margin="0,10,0,0" Foreground="White"/>
 				</StackPanel>
 
 				<StackPanel Grid.Column="1">
-					<CheckBox x:Name="RandomizeSeedStart" HorizontalAlignment="Center" Margin="0,10,0,0" IsChecked="false"/>
+					<CheckBox x:Name="RandomizeSeedStart" IsChecked="{Binding RandomizeSeedOnGenerate, Mode=TwoWay}" HorizontalAlignment="Center" Margin="0,10,0,0"  Background="#FF333337" Foreground="White" BorderBrush="#FF434346"/>
 
-					<TextBox Margin="20,18,20,0"/>
-					<TextBox Margin="20,5,20,0"/>
+					<TextBox Margin="20,18,20,0" Text="{Binding PositionX, Mode=TwoWay}" Background="#FF333337" BorderBrush="#FF434346" Foreground="White"/>
+					<TextBox Margin="20,5,20,0" Text="{Binding PositionY, Mode=TwoWay}" BorderBrush="#FF434346" Background="#FF333337" Foreground="White"/>
 
-					<TextBox Margin="20,18,20,0"/>
-					<TextBox Margin="20,5,20,0"/>
+					<TextBox Margin="20,18,20,0" Text="{Binding Width, Mode=TwoWay}" BorderBrush="#FF434346" Background="#FF333337" Foreground="White"/>
+					<TextBox Margin="20,5,20,0" Text="{Binding Height, Mode=TwoWay}" BorderBrush="#FF434346" Background="#FF333337" Foreground="White"/>
 				</StackPanel>
 			</Grid>
 
@@ -40,8 +46,8 @@
 				<ColumnDefinition Width="*"/>
 				<ColumnDefinition Width="*"/>
 			</Grid.ColumnDefinitions>
-			<Button Content="Apply" Name="applyButton" Margin="10" Grid.Column="0" Click="ApplyButton" IsEnabled="false"/>
-			<Button Content="Cancel" Margin="10" Grid.Column="1" Click="CancelButton"/>
+			<Button Content="Apply" Name="applyButton" Margin="10" Grid.Column="0" Click="ApplyButton" IsEnabled="false" Foreground="White" Background="#FF007ACC" BorderBrush="#FF006BB4"/>
+			<Button Content="Cancel" Margin="10" Grid.Column="1" Click="CancelButton" Background="#FF007ACC" Foreground="White" BorderBrush="#FF006BB4"/>
 
 		</Grid>
 	</Grid>

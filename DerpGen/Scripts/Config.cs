@@ -7,24 +7,24 @@ namespace DerpGen
 	[System.Serializable]
 	public class Config
 	{
-		public float PositionX = 0;
-		public float PositionY = 0;
+		private float _positionX = 0;
+		private float _positionY = 0;
 
-		public float Width = 784;
-		public float Height = 522;
+		private float _width = 784;
+		private float _height = 522;
 
-		public int MapWidth = 300;
-		public int MapHeight = 300;
-		public int Seed = 121;
-		public float Scale = 32;
-		public int Octaves = 3;
-		public float Persistence = 0.5f;
-		public float Lacunarity = 2;
-		public float Radius = 60;
-		public float OffsetX = 0;
-		public float OffsetY = 0;
+		private int _mapWidth = 300;
+		private int _mapHeight = 300;
+		private int _seed = 121;
+		private float _scale = 32;
+		private int _octaves = 3;
+		private float _persistence = 0.5f;
+		private float _lacunarity = 2;
+		private float _radius = 60;
+		private float _offsetX = 0;
+		private float OffsetY = 0;
 
-		public bool RandomizeSeedOnGenerated = false;
+		private bool RandomizeSeedOnGenerated = false;
 
 		public List<string> recentFilePaths = new List<string>();
 	}

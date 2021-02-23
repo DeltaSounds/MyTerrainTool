@@ -22,12 +22,12 @@ namespace DerpGen
 	{
 		private MainWindow _mainWindow = new MainWindow();
 
-		public PropertiesWindow(Parameters parameter)
+		public PropertiesWindow(Config config)
 		{
 			InitializeComponent();
-			DataContext = parameter;
+			DataContext = config;
 
-			parameter.PropertyChanged += OnValueChanged;
+			config.PropertyChanged += OnValueChanged;
 		}
 
 		private void OnValueChanged(object sender, PropertyChangedEventArgs e)

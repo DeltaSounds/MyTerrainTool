@@ -5,77 +5,77 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DerpGen"
         mc:Ignorable="d"
-        Title="MainWindow" Height="522" Width="784.667" MinWidth="784" MinHeight="522">
+        Title="DerpGen 1.0" Height="522" Width="784.667" MinWidth="784" MinHeight="522" Background="#FF6C6C6C">
 
 
 	<Grid Background="#303030">
-		<DockPanel>
-			<Menu x:Name="MainMenu" DockPanel.Dock="Top">
-				<MenuItem Header="_File">
-					<MenuItem Header="_New" Click="ResetParameters"/>
-					<MenuItem Header="_Open" Click="OnLoad"/>
-					<MenuItem Header="_Save" Click="OnSave"/>
-					<MenuItem Header="_Save as..." Click="OnSaveAs"/>
-					<MenuItem Header="_Export as PNG" Click="ExportAsPNG"/>
-					<MenuItem Header="_Properties" Click="OpenPropertiesWindow"/>
+		<DockPanel >
+			<Menu x:Name="MainMenu" DockPanel.Dock="Top" Background="White">
+				<MenuItem Header="_File" Foreground="Black">
+					<MenuItem Header="_New" Click="OpenNew" Background="#006C6C6C" BorderBrush="#006C6C6C" BorderThickness="1"/>
+					<MenuItem Header="_Open" Click="OnLoad" Background="#00000000"/>
+					<MenuItem Header="_Save" Click="OnSave" Background="#006C6C6C"/>
+					<MenuItem Header="_Save as..." Click="OnSaveAs" Background="#006C6C6C"/>
+					<MenuItem Header="_Export as PNG" Click="ExportAsPNG" Background="#006C6C6C"/>
+					<MenuItem Header="_Properties" Click="OpenPropertiesWindow" Background="#006C6C6C"/>
 					<Separator />
-					<MenuItem Header="_0Exit" />
+					<MenuItem Header="_Exit" Background="#006C6C6C" />
 				</MenuItem>
 
-				<MenuItem x:Name="recentMenuItem" Header="recent files">
+				<MenuItem x:Name="recentMenuItem" Header="recent files" Foreground="Black" >
 					<MenuItem Header="Clear List" />
 					<Separator/>
 				</MenuItem>
 
-					<MenuItem Header="Help">
-					<MenuItem Header="_Documentation" Click="OpenDocumentation"/>
+				<MenuItem Header="Help" Foreground="Black">
+					<MenuItem Header="_Documentation" Click="OpenDocumentation" Background="#006C6C6C"/>
 				</MenuItem>
 			</Menu>
-			<TextBox AcceptsReturn="True" />
+
 		</DockPanel>
 
-		<Grid Margin="10,30,10,10">
+		<Grid Margin="0,20,0,0" Background="#FF252526">
 			<Grid.ColumnDefinitions>
 				<ColumnDefinition Width="250" />
 				<ColumnDefinition Width="*" />
 			</Grid.ColumnDefinitions>
 
 			<StackPanel Grid.Column="0">
-				<TextBlock Text="Noise Settings" HorizontalAlignment="Center" Margin="0,0,0,20" FontSize="16"/>
+				<TextBlock Text="Noise Settings" HorizontalAlignment="Center" Margin="0,8,0,20" FontSize="16" Foreground="White"/>
 
-				<Grid>
+				<Grid Margin="10">
 					<Grid.ColumnDefinitions>
 						<ColumnDefinition Width="*" />
 						<ColumnDefinition Width="*" />
 					</Grid.ColumnDefinitions>
 					<StackPanel Grid.Column="0">
-						<TextBlock Text="Map Size" Margin="3.1"/>
-						<TextBlock Text="Seed" Margin="3.1"/>
-						<TextBlock Text="Noise Scale" Margin="3.1"/>
-						<TextBlock Text="Octaves" Margin="3.1"/>
-						<TextBlock Text="Persistence" Margin="3.1"/>
-						<TextBlock Text="Lacunarity" Margin="3.1"/>
+						<TextBlock Text="Map Size" Margin="3.1" Foreground="White"/>
+						<TextBlock Text="Seed" Margin="3.1" Foreground="White"/>
+						<TextBlock Text="Noise Scale" Margin="3.1" Foreground="White"/>
+						<TextBlock Text="Octaves" Margin="3.1" Foreground="White"/>
+						<TextBlock Text="Persistence" Margin="3.1" Foreground="White"/>
+						<TextBlock Text="Lacunarity" Margin="3.1" Foreground="White"/>
 					</StackPanel>
 
 					<StackPanel Grid.Column="1">
-						<TextBox Name="inpSize" Margin="2" Text="{Binding MapSize, Mode=TwoWay }" ToolTip="Set the resolution of you heightmap"/>
+						<TextBox Name="inpSize" Margin="2" Background="#FF333337" BorderBrush="#FF434346" Text="{Binding MapSize, Mode=TwoWay }" ToolTip="Set the resolution of you heightmap" Foreground="White"/>
 
 						<Grid>
 							<Grid.ColumnDefinitions>
 								<ColumnDefinition Width="*" />
 								<ColumnDefinition Width="*" />
 							</Grid.ColumnDefinitions>
-							<TextBox Name="inpSeed" Margin="2" Text="{Binding Seed, Mode=TwoWay }" Grid.Column="0"/>
-							<Button Content="Random" Grid.Column="1" Margin="2" Click="RandomizeSeed"/>
+							<TextBox Name="inpSeed" Margin="2" Text="{Binding Seed, Mode=TwoWay }" Grid.Column="0" ToolTip="Seed value for heightmap" Foreground="White" BorderBrush="#FF434346" Background="#FF333337"/>
+							<Button Content="Random" Grid.Column="1" Margin="2" Click="RandomizeSeed" ToolTip="Generates random seed value" Background="#FF007ACC" Foreground="White" BorderBrush="#FF0C67A4"/>
 						</Grid>
-						<TextBox Name="inpScale" Margin="2" Text="{Binding Scale, Mode=TwoWay}"/>
+						<TextBox Name="inpScale" Margin="2" Text="{Binding Scale, Mode=TwoWay}" ToolTip="Scales the heightmap with out affecting size of the actual image" Background="#FF333337" BorderBrush="#FF434346" Foreground="White"/>
 						<Grid>
 							<Grid.ColumnDefinitions>
 								<ColumnDefinition Width="90" />
 								<ColumnDefinition Width="*" />
 							</Grid.ColumnDefinitions>
-							<Slider Name="inpOct" Margin="2" Minimum="1" Maximum="10" Value="{Binding Octaves, Mode=TwoWay}" Grid.Column="0" />
-							<TextBox Margin="2" Text="{Binding Octaves, Mode=TwoWay}" Grid.Column="1"/>
+							<Slider Name="inpOct" Margin="2" Minimum="1" Maximum="10" Value="{Binding Octaves, Mode=TwoWay}" Grid.Column="0" ToolTip="number of LOD for noise"/>
+							<TextBox Margin="2" Text="{Binding Octaves, Mode=TwoWay}" Grid.Column="1" Foreground="White" BorderBrush="#FF434346" Background="#FF333337"/>
 						</Grid>
 
 						<Grid>
@@ -84,54 +84,62 @@
 								<ColumnDefinition Width="3*" />
 								<ColumnDefinition Width="4*"/>
 							</Grid.ColumnDefinitions>
-							<Slider Name="inpPer" Margin="2" Minimum="0" Maximum="1" Value="{Binding Persistence, Mode=TwoWay}" Grid.Column="0"/>
-							<TextBox Margin="2" Text="{Binding Persistence, Mode=TwoWay}" Grid.Column="1" Grid.ColumnSpan="2"/>
+							<Slider Name="inpPer" Margin="2" Minimum="0" Maximum="1" Value="{Binding Persistence, Mode=TwoWay}" Grid.Column="0" ToolTip="How much each octave contributes to the overall shape."/>
+							<TextBox Margin="2" Text="{Binding Persistence, Mode=TwoWay}" Grid.Column="1" Grid.ColumnSpan="2" BorderBrush="#FF434346" Background="#FF333337" Foreground="White"/>
 						</Grid>
-						<TextBox Name="inpLac" Margin="2" Text="{Binding Lacunarity, Mode=TwoWay}"/>
+						<TextBox Name="inpLac" Margin="2" Text="{Binding Lacunarity, Mode=TwoWay}" ToolTip="how much detail is added or removed at each octave." Background="#FF333337" BorderBrush="#FF434346" Foreground="White"/>
 					</StackPanel>
 				</Grid>
 
-				<TextBlock Text="FallOff Settings" HorizontalAlignment="Center" Margin=" 0, 20, 0, 10"/>
+				<Separator Margin="0,10,0,0" Background="#FF3F3F46"/>
+				<TextBlock Text="FallOff Settings" HorizontalAlignment="Center" Margin=" 0, 20, 0, 10" Foreground="White"/>
 
-				<Grid>
+				<Grid Margin="10">
 					<Grid.ColumnDefinitions>
 						<ColumnDefinition Width="*" />
 						<ColumnDefinition Width="*" />
 					</Grid.ColumnDefinitions>
 					<StackPanel Grid.Column="0">
-						<TextBlock Text="Radius" Margin="2"/>
+						<TextBlock Text="Radius" Margin="2" Foreground="White"/>
 					</StackPanel>
 
 					<StackPanel Grid.Column="1">
-						<TextBox Name="inpRadius" Margin="2"  Text="{Binding Radius, Mode=TwoWay}"/>
+						<TextBox Name="inpRadius" Margin="2"  Text="{Binding Radius, Mode=TwoWay}" ToolTip="Radius for falloff size" BorderBrush="#FF434346" Background="#FF333337" Foreground="White"/>
 					</StackPanel>
 				</Grid>
 
-				<TextBlock Text="Offset Settings" HorizontalAlignment="Center" Margin=" 0, 20, 0, 10"/>
+				<TextBlock Text="Offset Settings" HorizontalAlignment="Center" Margin=" 0, 20, 0, 10" Foreground="White"/>
 
-				<Grid>
+				<Grid Margin="10">
 					<Grid.ColumnDefinitions>
 						<ColumnDefinition Width="*" />
 						<ColumnDefinition Width="*" />
 					</Grid.ColumnDefinitions>
 					<StackPanel Grid.Column="0">
-						<TextBlock Text="Offset x" Margin="2"/>
-						<TextBlock Text="Offset y" Margin="2"/>
+						<TextBlock Text="Offset x" Margin="2" Foreground="White"/>
+						<TextBlock Text="Offset y" Margin="2" Foreground="White"/>
 					</StackPanel>
 
 					<StackPanel Grid.Column="1">
-						<TextBox Name="inpOffsetX" Margin="2" Text="0"/>
-						<TextBox Name="inpOffsetY" Margin="2" Text="0"/>
+						<TextBox Name="inpOffsetX" Margin="2" Text="0" Foreground="White" Background="#FF333337" BorderBrush="#FF434346"/>
+						<TextBox Name="inpOffsetY" Margin="2" Text="0" Foreground="White" Background="#FF333337" BorderBrush="#FF434346"/>
 					</StackPanel>
 				</Grid>
 
 
 			</StackPanel>
-
-			<Button Content="Generate" Margin="5, 20" Click="UpdateHeightMap" VerticalAlignment="Bottom"/>
+			<StackPanel VerticalAlignment="Bottom">
+				<Button Content="Generate" Margin="5, 10" Click="UpdateHeightMap" VerticalAlignment="Bottom" ToolTip="Renders the image preview" Foreground="White" Background="#FF007ACC" BorderBrush="#FF0C67A4" Height="25"/>
+			</StackPanel>
 
 			<Grid Grid.Column="1">
-				<Image x:Name="MainImage"/>
+				<Grid.Background>
+					<LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+						<GradientStop Color="#FF0F0F0F" Offset="0"/>
+						<GradientStop Color="#FF252526" Offset="1"/>
+					</LinearGradientBrush>
+				</Grid.Background>
+				<Image x:Name="MainImage" Margin="0"/>
 			</Grid>
 		</Grid>
 	</Grid>
