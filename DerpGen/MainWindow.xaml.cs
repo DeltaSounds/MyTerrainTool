@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -55,6 +56,7 @@ namespace DerpGen
 
 			bgWorker.DoWork += new DoWorkEventHandler(RenderImage);
 			bgWorker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(GenerateCompleted);
+			bgWorker.ProgressChanged += new ProgressChangedEventHandler(OnProgressChanged);
 		}
 
 		private void GenerateCompleted(object sender, RunWorkerCompletedEventArgs e)
@@ -62,47 +64,62 @@ namespace DerpGen
 			if(!e.Cancelled)
 			{
 				MainImage.Source = (WriteableBitmap)e.Result;
+				pBar.Value = 0;
+
+				outpotLogBox.Items.Add(">> Heightmap generated successfully!");
 			}
 			else
 			{
 				MessageBox.Show("Generation has been terminated!", "Warning!", MessageBoxButton.OK);
+				outpotLogBox.Items.Add(">> Heightmap generation has been terminated!");
 			}
+		}
+
+		private void OnProgressChanged(object sender, ProgressChangedEventArgs e)
+		{
+			pBar.Value = e.ProgressPercentage;
 		}
 
 		private void RenderImage(object sender, DoWorkEventArgs e)
 		{
-			// https://nerdparadise.com/programming/csharpimageediting
-			
-			float[,] noiseMap = Noise.GenerateNoiseMap(Parameter.MapSize, Parameter.MapSize, Parameter.Seed, Parameter.Scale, Parameter.Octaves, Parameter.Persistence, Parameter.Lacunarity, Parameter.Offset, Parameter.Radius);
 
+			// https://nerdparadise.com/programming/csharpimageediting
+
+			float[,] noiseMap = Noise.GenerateNoiseMap(Parameter.MapSize, Parameter.MapSize, Parameter.Seed, Parameter.Scale, Parameter.Octaves, Parameter.Persistence, Parameter.Lacunarity, Parameter.Offset, Parameter.Radius);
+			
 			int w = noiseMap.GetLength(0);
 			int h = noiseMap.GetLength(1);
-
+			
 			WriteableBitmap bitmap = new WriteableBitmap(w, h, 96, 96, PixelFormats.Pbgra32, null);
-
-
+			
+			
 			uint[] pixels = new uint[w * h];
-
+			
 			byte r;
 			byte g;
 			byte b;
 			byte a;
-
-
-
+			
+			
+			
 			for (int x = 0; x < h; x++)
 			{
 				for (int y = 0; y < w; y++)
 				{
 					int i = y * w + x;
-
+			
 					r = (byte)(noiseMap[x, y] * 255);
 					g = (byte)(noiseMap[x, y] * 255);
 					b = (byte)(noiseMap[x, y] * 255);
 					a = 255;
-
+			
 					pixels[i] = (uint)((a << 24) + (r << 16) + (g << 8) + b);
+					this.Dispatcher.Invoke(() =>
+					{
+						pBar.Value = (float)x / w * 100;
+					});
 				}
+				
 			}
 
 			// apply pixels to bitmap
@@ -112,7 +129,7 @@ namespace DerpGen
 			e.Result = bmp;
 
 			//On Aborted
-			if(bgWorker.CancellationPending)
+			if (bgWorker.CancellationPending)
 			{
 				e.Cancel = true;
 				return;
@@ -139,12 +156,14 @@ namespace DerpGen
 
 			if (loadConfig != null)
 			{
+				outpotLogBox.Items.Add($">> Loaded config file from {_configPath}");
 				_config = loadConfig;
 			}
 			else
 			{
 				_config = new Config();
 
+				outpotLogBox.Items.Add(">> Config file not found! Creating new config file...");
 				Directory.CreateDirectory(_configCompanyPath);
 				Directory.CreateDirectory(_configApplicationPath);
 			}
@@ -157,18 +176,23 @@ namespace DerpGen
 			// Set Window Size
 			this.Width = _config.Width;
 			this.Height = _config.Height;
-
+			
+			Parameters param = new Parameters();
+			
 			// Set Parameters
-			Parameter.Seed = _config.Seed;
-			Parameter.Scale = _config.Scale;
-			Parameter.Octaves = _config.Octaves;
-			Parameter.Persistence = _config.Persistence;
-			Parameter.Lacunarity = _config.Lacunarity;
-			Parameter.Radius = _config.Radius;
-			Parameter.OffsetX = _config.OffsetX;
-			Parameter.OffsetY = _config.OffsetY;
+			param.Seed = _config.Seed;
+			param.Scale = _config.Scale;
+			param.Octaves = _config.Octaves;
+			param.Persistence = _config.Persistence;
+			param.Lacunarity = _config.Lacunarity;
+			param.Radius = _config.Radius;
+			param.OffsetX = _config.OffsetX;
+			param.OffsetY = _config.OffsetY;
 
-			Parameter.RandomizeSeedOnGenerate = _config.RandomizeSeedOnGenerated;
+			param.RandomizeSeedOnGenerate = _config.RandomizeSeedOnGenerate;
+
+			Parameter = param;
+			
 			DataContext = Parameter;
 			// Load Recent List
 			for (int i = 0; i < _config.recentFilePaths.Count; i++)
@@ -184,7 +208,10 @@ namespace DerpGen
 			}
 
 			UpdateRecentFiles();
+			outpotLogBox.Items.Add(">> Generating heightmap...");
 			bgWorker.RunWorkerAsync();
+
+			outpotLogBox.Items.Add(">> Config has been applied!");
 		}
 
 		private void UpdateRecentFiles()
@@ -245,7 +272,7 @@ namespace DerpGen
 
 		private void OpenPropertiesWindow(object sender, RoutedEventArgs e)
 		{
-			PropertiesWindow PropWindow = new PropertiesWindow(Parameter);
+			PropertiesWindow PropWindow = new PropertiesWindow(_config);
 			PropWindow.ShowDialog();
 		}
 
@@ -268,11 +295,11 @@ namespace DerpGen
 					Parameter.Radius = 90;
 					Parameter.OffsetX = 0;
 					Parameter.OffsetY = 0;
-					
 
-					//ApplyConfig();
+					
 					
 					SaveManager.Save(Parameter, savePath);
+					DataContext = SaveManager.Load(savePath);
 					bgWorker.RunWorkerAsync();
 				}
 			}
@@ -297,7 +324,11 @@ namespace DerpGen
 
 		private void UpdateHeightMap(object sender, RoutedEventArgs e)
 		{
-			bgWorker.RunWorkerAsync();
+			if(!bgWorker.IsBusy)
+			{
+				outpotLogBox.Items.Add(">> Generating Terrain..");
+				bgWorker.RunWorkerAsync();
+			}
 		}
 
 		private void RandomizeSeed(object sender, RoutedEventArgs e)
@@ -319,6 +350,7 @@ namespace DerpGen
 			}
 
 			SaveManager.Save(Parameter, _currentFilePath);
+			outpotLogBox.Items.Add($">> Saved file at {_currentFilePath}");
 		}
 
 		private void OnSaveAs(object sender, RoutedEventArgs e)
@@ -328,6 +360,7 @@ namespace DerpGen
 			if (savePath != null)
 			{
 				SaveManager.Save(Parameter, savePath);
+				outpotLogBox.Items.Add($">> Saved file at {savePath}");
 			}
 
 		}
@@ -343,9 +376,9 @@ namespace DerpGen
 				if (loadData != null)
 				{
 					Parameter = loadData;
-
 					DataContext = Parameter;
 					bgWorker.RunWorkerAsync();
+					outpotLogBox.Items.Add($">> Opened file at {loadPath}");
 				}
 			}
 
