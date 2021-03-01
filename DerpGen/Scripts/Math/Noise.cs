@@ -5,8 +5,21 @@ namespace DerpGen
 {
 	public class Noise
 	{
-		public static float[,] GenerateNoiseMap(BackgroundWorker bgWorker, int mapWidth, int mapHeight, int seed, float scale, int octaves, float persistance, float lacunarity, Vector2 offset, float radius)
+		public static float[,] GenerateNoiseMap( Parameters parameter, BackgroundWorker bgWorker, bool isAborted)
 		{
+			int mapWidth = parameter.MapSize;
+			int mapHeight = parameter.MapSize;
+
+			int seed = parameter.Seed;
+			float scale = parameter.Scale;
+			int octaves = parameter.Octaves;
+			float persistance = parameter.Persistence;
+			float lacunarity = parameter.Lacunarity;
+
+			Vector2 offset = parameter.Offset;
+			float radius = parameter.Radius;
+
+
 			float[,] noiseMap = new float[mapWidth, mapHeight];
 			Vector2 mapSize = new Vector2(mapWidth, mapHeight);
 
@@ -48,6 +61,14 @@ namespace DerpGen
 					noiseMap[x, y] = noiseHeight;
 				}
 				bgWorker.ReportProgress((int)((float)x / noiseMap.GetLength(0) * 100));
+
+				//On Aborted
+				if(isAborted)
+				{
+					bgWorker.CancelAsync();
+					return null;
+				}
+
 			}
 
 			for (int x = 0; x < noiseMap.GetLength(0); x++)

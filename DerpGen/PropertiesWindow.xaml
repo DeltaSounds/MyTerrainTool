@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DerpGen"
         mc:Ignorable="d"
-        Title="Properties" Height="362" Width="334" MinHeight="362" MaxHeight="362" MinWidth="334" MaxWidth="334">
+        Title="Properties" Height="362" Width="334" MinHeight="362" MaxHeight="362" MinWidth="334" MaxWidth="334" Style="{DynamicResource CustomWindowStyle}">
 	<Grid Background="#FF252526">
 		<StackPanel>
 			<StackPanel.Background>

@@ -60,3 +60,12 @@ D:\GIT\MyTerrainTool\DerpGen\obj\Debug\PropertiesWindow.g.cs
 D:\GIT\MyTerrainTool\DerpGen\obj\Debug\PropertiesWindow.baml
 D:\GIT\MyTerrainTool\DerpGen\obj\Debug\DocWindow.g.cs
 D:\GIT\MyTerrainTool\DerpGen\obj\Debug\DocWindow.baml
+D:\GIT\MyTerrainTool\DerpGen\obj\Debug\Themes\ColourfulDarkTheme.baml
+D:\GIT\MyTerrainTool\DerpGen\obj\Debug\Themes\ColourfulLightTheme.baml
+D:\GIT\MyTerrainTool\DerpGen\obj\Debug\Themes\DarkTheme.baml
+D:\GIT\MyTerrainTool\DerpGen\obj\Debug\Themes\LightTheme.baml
+D:\GIT\MyTerrainTool\DerpGen\obj\Debug\Themes\ColourfulDarkTheme.g.cs
+D:\GIT\MyTerrainTool\DerpGen\obj\Debug\Themes\ColourfulLightTheme.g.cs
+D:\GIT\MyTerrainTool\DerpGen\obj\Debug\Themes\DarkTheme.g.cs
+D:\GIT\MyTerrainTool\DerpGen\obj\Debug\Themes\LightTheme.g.cs
+D:\GIT\MyTerrainTool\DerpGen\obj\Debug\App.baml
