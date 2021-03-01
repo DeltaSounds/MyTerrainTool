@@ -1,10 +1,11 @@
 ﻿using System;
+using System.ComponentModel;
 
 namespace DerpGen
 {
 	public class Noise
 	{
-		public static float[,] GenerateNoiseMap(int mapWidth, int mapHeight, int seed, float scale, int octaves, float persistance, float lacunarity, Vector2 offset, float radius)
+		public static float[,] GenerateNoiseMap(BackgroundWorker bgWorker, int mapWidth, int mapHeight, int seed, float scale, int octaves, float persistance, float lacunarity, Vector2 offset, float radius)
 		{
 			float[,] noiseMap = new float[mapWidth, mapHeight];
 			Vector2 mapSize = new Vector2(mapWidth, mapHeight);
@@ -21,17 +22,16 @@ namespace DerpGen
 			{
 				for (int y = 0; y < noiseMap.GetLength(1); y++)
 				{
-
 					float amplitude = 1;
 					float frequency = 1;
 					float noiseHeight = 0;
 
 					for (int i = 0; i < octaves; i++)
 					{
-						float sampleX = x / scale * frequency;
-						float sampleY = y / scale * frequency;
+						float sampleX = x / scale * frequency + offset.x;
+						float sampleY = y / scale * frequency + offset.y;
 
-						float perlinValue = EMath.PerlinNoise(sampleX, sampleY) / 2 - 1;
+						float perlinValue = EMath.PerlinNoise(sampleX, sampleY);
 						noiseHeight += perlinValue * amplitude;
 
 						amplitude *= persistance;
@@ -45,9 +45,9 @@ namespace DerpGen
 
 					mapSize = new Vector2(noiseMap.GetLength(0), noiseMap.GetLength(1));
 
-
 					noiseMap[x, y] = noiseHeight;
 				}
+				bgWorker.ReportProgress((int)((float)x / noiseMap.GetLength(0) * 100));
 			}
 
 			for (int x = 0; x < noiseMap.GetLength(0); x++)
