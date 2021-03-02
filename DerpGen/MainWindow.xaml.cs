@@ -314,16 +314,19 @@ namespace DerpGen
 				// Create a new menu item & set name
 				MenuItem menuItem = new MenuItem();
 				menuItem.Header = RecentList[i];
+				menuItem.Template = (ControlTemplate)FindResource("SingleDropDownMenuItem");
 				menuItem.Click += OpenRecent;
 
 				recentMenuItem.Items.Add(menuItem);
 			}
 
 			Separator sep = new Separator();
+			sep.Style = (Style)FindResource("sepDark");
 			recentMenuItem.Items.Add(sep);
 
 			MenuItem clear = new MenuItem();
 			clear.Header = "Clear List";
+			clear.Template = (ControlTemplate)FindResource("SingleDropDownMenuItem");
 			clear.Click += ClearList;
 
 			recentMenuItem.Items.Add(clear);
