@@ -22,12 +22,13 @@ namespace DerpGen
 	{
 		private MainWindow _mainWindow = new MainWindow();
 
-		public PropertiesWindow(Config config)
+		public PropertiesWindow(Config config, MainWindow mw)
 		{
 			InitializeComponent();
 			DataContext = config;
 
 			config.PropertyChanged += OnValueChanged;
+			_mainWindow = mw;
 		}
 
 		private void OnValueChanged(object sender, PropertyChangedEventArgs e)
@@ -43,6 +44,7 @@ namespace DerpGen
 		private void ApplyButton(object sender, RoutedEventArgs e)
 		{
 			applyButton.IsEnabled = false;
+			_mainWindow.ApplyProperties();
 		}
 	}
 }

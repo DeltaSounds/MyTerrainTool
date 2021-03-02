@@ -1,24 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
-using System.Linq;
-using System.Runtime.Serialization.Formatters.Binary;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using System.Windows.Threading;
-using Accord.Math;
 using Microsoft.Win32;
 
 namespace DerpGen
@@ -46,7 +34,6 @@ namespace DerpGen
 		public Renderer Render = new Renderer();
 		public Random random = new Random();
 		public List<string> RecentList = new List<string>();
-		public event ProgressChangedEventHandler ProgressChanged;
 
 		public MainWindow()
 		{
@@ -61,119 +48,8 @@ namespace DerpGen
 			bgWorker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(GenerateCompleted);
 			bgWorker.ProgressChanged += new ProgressChangedEventHandler(OnProgressChanged);
 		}
-		private void ClearOutputLog(object sender, RoutedEventArgs e)
-		{
-			outpotLogBox.Items.Clear();
-		}
 
-		private void Abort(object sender, RoutedEventArgs e)
-		{
-			bgWorker.CancelAsync();
-			_isAborted = true;
-		}
-
-		private void GenerateCompleted(object sender, RunWorkerCompletedEventArgs e)
-		{
-			if (!e.Cancelled)
-			{
-				MainImage.Source = (WriteableBitmap)e.Result;
-				pBar.Value = 0;
-
-				btnGen.IsEnabled = true;
-				btnAbort.IsEnabled = false;
-
-				outpotLogBox.Items.Add(">> Heightmap generated successfully!");
-			}
-			else
-			{
-				MessageBox.Show("Generation has been terminated!", "Warning!", MessageBoxButton.OK);
-				outpotLogBox.Items.Add(">> Heightmap generation has been terminated!");
-				btnGen.IsEnabled = true;
-				btnAbort.IsEnabled = false;
-			}
-		}
-
-		private void OnProgressChanged(object sender, ProgressChangedEventArgs e)
-		{
-			pBar.Value = e.ProgressPercentage;
-		}
-
-		private void RenderImage(object sender, DoWorkEventArgs e)
-		{
-			Dispatcher.Invoke(() =>
-			{
-				btnGen.IsEnabled = false;
-				btnAbort.IsEnabled = true;
-			});
-
-			if (Parameter.RandomizeSeedOnGenerate)
-			{
-				Parameter.Seed = random.Next(1, int.MaxValue);
-				inpSeed.Text = Parameter.Seed.ToString();
-			}
-
-
-			// https://nerdparadise.com/programming/csharpimageediting
-			float[,] noiseMap = Noise.GenerateNoiseMap(Parameter, bgWorker, _isAborted);
-
-			if (bgWorker.CancellationPending)
-			{
-				e.Cancel = true;
-				return;
-			}
-
-			int w = noiseMap.GetLength(0);
-			int h = noiseMap.GetLength(1);
-
-			WriteableBitmap bitmap = new WriteableBitmap(w, h, 96, 96, PixelFormats.Pbgra32, null);
-
-
-			uint[] pixels = new uint[w * h];
-
-			byte r;
-			byte g;
-			byte b;
-			byte a;
-
-
-
-			for (int x = 0; x < h; x++)
-			{
-				for (int y = 0; y < w; y++)
-				{
-					int i = y * w + x;
-
-					r = (byte)(noiseMap[x, y] * 255);
-					g = (byte)(noiseMap[x, y] * 255);
-					b = (byte)(noiseMap[x, y] * 255);
-					a = 255;
-
-					pixels[i] = (uint)((a << 24) + (r << 16) + (g << 8) + b);
-				}
-				bgWorker.ReportProgress((int)((float)x / h * 100));
-			}
-
-			// apply pixels to bitmap
-			bitmap.WritePixels(new Int32Rect(0, 0, w, h), pixels, w * 4, 0);
-			var bmp = bitmap;
-			bmp.Freeze();
-			e.Result = bmp;
-		}
-
-		private void OnExitApplication(object sender, EventArgs e)
-		{
-			if (_config != null)
-			{
-				ConfigLoader.Save(_config, _configPath);
-			}
-		}
-
-		private void OpenDocumentation(object sender, RoutedEventArgs e)
-		{
-			DocWindow docWindow = new DocWindow();
-			docWindow.ShowDialog();
-		}
-
+		#region Configurations
 		private void LoadConfig()
 		{
 			var loadConfig = ConfigLoader.Load(_configPath);
@@ -182,6 +58,16 @@ namespace DerpGen
 			{
 				outpotLogBox.Items.Add($">> Loaded config file from {_configPath}");
 				_config = loadConfig;
+
+				//Check if the configs dimensions are less than min
+				if(_config.Width < MinWidth)
+				{
+					_config.Width = (float)MinWidth;
+				}
+				else if(_config.Height < MinHeight)
+				{
+					_config.Height = (float)MinHeight;
+				}
 			}
 			else
 			{
@@ -238,6 +124,186 @@ namespace DerpGen
 			outpotLogBox.Items.Add(">> Config has been applied!");
 		}
 
+		public void ApplyProperties()
+		{
+			Width = _config.Width;
+			Height = _config.Height;
+
+			Parameter.RandomizeSeedOnGenerate = _config.RandomizeSeedOnGenerate;
+		}
+		#endregion
+
+		#region Generate HeightMap (BackgroudWorker)
+		private void RenderImage(object sender, DoWorkEventArgs e)
+		{
+			Dispatcher.Invoke(() =>
+			{
+				btnGen.IsEnabled = false;
+				btnAbort.IsEnabled = true;
+				
+				if (Parameter.RandomizeSeedOnGenerate)
+				{
+					Parameter.Seed = random.Next(1, int.MaxValue);
+					inpSeed.Text = Parameter.Seed.ToString();
+				}
+			});
+
+
+
+			// https://nerdparadise.com/programming/csharpimageediting
+			float[,] noiseMap = Noise.GenerateNoiseMap(Parameter, bgWorker, _isAborted);
+
+			if (bgWorker.CancellationPending)
+			{
+				e.Cancel = true;
+				return;
+			}
+
+			int w = noiseMap.GetLength(0);
+			int h = noiseMap.GetLength(1);
+
+			WriteableBitmap bitmap = new WriteableBitmap(w, h, 96, 96, PixelFormats.Pbgra32, null);
+
+
+			uint[] pixels = new uint[w * h];
+
+			byte r;
+			byte g;
+			byte b;
+			byte a;
+
+
+
+			for (int x = 0; x < h; x++)
+			{
+				for (int y = 0; y < w; y++)
+				{
+					int i = y * w + x;
+
+					r = (byte)(noiseMap[x, y] * 255);
+					g = (byte)(noiseMap[x, y] * 255);
+					b = (byte)(noiseMap[x, y] * 255);
+					a = 255;
+
+					pixels[i] = (uint)((a << 24) + (r << 16) + (g << 8) + b);
+				}
+				bgWorker.ReportProgress((int)((float)x / h * 100));
+			}
+
+			// apply pixels to bitmap
+			bitmap.WritePixels(new Int32Rect(0, 0, w, h), pixels, w * 4, 0);
+			var bmp = bitmap;
+			bmp.Freeze();
+			e.Result = bmp;
+		}
+
+		private void OnProgressChanged(object sender, ProgressChangedEventArgs e)
+		{
+			pBar.Value = e.ProgressPercentage;
+		}
+
+		private void GenerateCompleted(object sender, RunWorkerCompletedEventArgs e)
+		{
+			if (!e.Cancelled)
+			{
+				MainImage.Source = (WriteableBitmap)e.Result;
+				pBar.Value = 0;
+
+				btnGen.IsEnabled = true;
+				btnAbort.IsEnabled = false;
+
+				outpotLogBox.Items.Add(">> Heightmap generated successfully!");
+			}
+			else
+			{
+				MessageBox.Show("Generation has been terminated!", "Warning!", MessageBoxButton.OK);
+				outpotLogBox.Items.Add(">> Heightmap generation has been terminated!");
+				btnGen.IsEnabled = true;
+				btnAbort.IsEnabled = false;
+			}
+		}
+		#endregion
+
+		#region Open Windows
+		private void OpenPropertiesWindow(object sender, RoutedEventArgs e)
+		{
+			PropertiesWindow PropWindow = new PropertiesWindow(_config, this);
+			PropWindow.ShowDialog();
+		}
+
+		private void OpenDocumentation(object sender, RoutedEventArgs e)
+		{
+			DocWindow docWindow = new DocWindow();
+			docWindow.ShowDialog();
+		}
+		#endregion
+
+		#region RoutedEvents
+		private void Abort(object sender, RoutedEventArgs e)
+		{
+			bgWorker.CancelAsync();
+			_isAborted = true;
+		}
+
+		private void ClearOutputLog(object sender, RoutedEventArgs e)
+		{
+			outpotLogBox.Items.Clear();
+		}
+
+		private void OnExitApplication(object sender, EventArgs e)
+		{
+			if (_config != null)
+			{
+				ConfigLoader.Save(_config, _configPath);
+			}
+		}
+
+		private void OpenNew(object sender, RoutedEventArgs e)
+		{
+			MessageBoxResult result = MessageBox.Show("Any unsaved changes will be lost! do you wish to proceed?", "Warning!", MessageBoxButton.YesNo);
+
+			if (result == MessageBoxResult.Yes)
+			{
+				string savePath = GetSavePath();
+
+				if (savePath != null)
+				{
+					Parameter.MapSize = 256;
+					Parameter.Seed = 100;
+					Parameter.Scale = 80;
+					Parameter.Octaves = 5;
+					Parameter.Persistence = 0.5f;
+					Parameter.Lacunarity = 2;
+					Parameter.Radius = 90;
+					Parameter.OffsetX = 0;
+					Parameter.OffsetY = 0;
+
+
+					outpotLogBox.Items.Add(">> Loaded new file");
+					SaveManager.Save(Parameter, savePath);
+					DataContext = SaveManager.Load(savePath);
+					bgWorker.RunWorkerAsync();
+				}
+			}
+		}
+
+		private void UpdateHeightMap(object sender, RoutedEventArgs e)
+		{
+			if (!bgWorker.IsBusy)
+			{
+				outpotLogBox.Items.Add(">> Generating Terrain...");
+				bgWorker.RunWorkerAsync();
+			}
+		}
+
+		private void RandomizeSeed(object sender, RoutedEventArgs e)
+		{
+			Parameter.Seed = random.Next(1, int.MaxValue);
+			inpSeed.Text = Parameter.Seed.ToString();
+		}
+		#endregion
+
+		#region Recent List
 		private void UpdateRecentFiles()
 		{
 			recentMenuItem.Items.Clear();
@@ -300,75 +366,9 @@ namespace DerpGen
 				UpdateRecentFiles();
 			}
 		}
+		#endregion
 
-		private void OpenPropertiesWindow(object sender, RoutedEventArgs e)
-		{
-			PropertiesWindow PropWindow = new PropertiesWindow(_config);
-			PropWindow.ShowDialog();
-		}
-
-		private void OpenNew(object sender, RoutedEventArgs e)
-		{
-			MessageBoxResult result = MessageBox.Show("Any unsaved changes will be lost! do you wish to proceed?", "Warning!", MessageBoxButton.YesNo);
-
-			if (result == MessageBoxResult.Yes)
-			{
-				string savePath = GetSavePath();
-
-				if (savePath != null)
-				{
-					Parameter.MapSize = 256;
-					Parameter.Seed = 100;
-					Parameter.Scale = 80;
-					Parameter.Octaves = 5;
-					Parameter.Persistence = 0.5f;
-					Parameter.Lacunarity = 2;
-					Parameter.Radius = 90;
-					Parameter.OffsetX = 0;
-					Parameter.OffsetY = 0;
-
-
-					outpotLogBox.Items.Add(">> Loaded new file");
-					SaveManager.Save(Parameter, savePath);
-					DataContext = SaveManager.Load(savePath);
-					bgWorker.RunWorkerAsync();
-				}
-			}
-		}
-
-		private void ExportAsPNG(object sender, RoutedEventArgs e)
-		{
-			string path = GetExportPath();
-
-			if (path != null)
-			{
-				using (FileStream fileStream = File.Create(path))
-				{
-					PngBitmapEncoder encoder = new PngBitmapEncoder();
-					encoder.Frames.Add(BitmapFrame.Create(MainImage.Source as BitmapSource));
-					encoder.Save(fileStream);
-					MessageBox.Show("Successfully exported heightmap!", "Success!", MessageBoxButton.OK);
-					outpotLogBox.Items.Add($">> File Exported to {path}");
-				}
-			}
-
-		}
-
-		private void UpdateHeightMap(object sender, RoutedEventArgs e)
-		{
-			if (!bgWorker.IsBusy)
-			{
-				outpotLogBox.Items.Add(">> Generating Terrain...");
-				bgWorker.RunWorkerAsync();
-			}
-		}
-
-		private void RandomizeSeed(object sender, RoutedEventArgs e)
-		{
-			Parameter.Seed = random.Next(1, int.MaxValue);
-			inpSeed.Text = Parameter.Seed.ToString();
-		}
-
+		#region Save
 		private void OnSave(object sender, RoutedEventArgs e)
 		{
 			if (_currentFilePath == null)
@@ -397,69 +397,6 @@ namespace DerpGen
 
 		}
 
-		private void OnLoad(object sender, RoutedEventArgs e)
-		{
-			string loadPath = GetLoadPath();
-
-			if (loadPath != null)
-			{
-				var loadData = SaveManager.Load(loadPath);
-
-				if (loadData != null)
-				{
-					Parameter = loadData;
-					DataContext = Parameter;
-					bgWorker.RunWorkerAsync();
-					outpotLogBox.Items.Add($">> Opened file at {loadPath}");
-				}
-			}
-
-		}
-
-		private void ExitApplication(object sender, CancelEventArgs e)
-		{
-			//MessageBoxResult result = MessageBox.Show("Any unsaved changes will be lost! do you wish to proceed?", "Warning!", MessageBoxButton.YesNo);
-			//
-			//if (result == MessageBoxResult.No)
-			//{
-			//	e.Cancel = true;
-			//	return;
-			//}
-		}
-
-		private string GetLoadPath()
-		{
-			OpenFileDialog openFileDialog = new OpenFileDialog();
-
-			openFileDialog.Filter = "Data File | *.dat";
-			openFileDialog.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-			bool? result = openFileDialog.ShowDialog();
-
-			if (result.HasValue && result.Value)
-			{
-				AddRecentItem(openFileDialog.FileName);
-				return openFileDialog.FileName;
-			}
-
-			return null;
-		}
-
-		private string GetExportPath()
-		{
-			SaveFileDialog saveFileDialog = new SaveFileDialog();
-
-			saveFileDialog.Filter = "PNG file | .png";
-			saveFileDialog.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
-			bool? result = saveFileDialog.ShowDialog();
-
-			if (result.HasValue && result.Value)
-			{
-				return saveFileDialog.FileName;
-			}
-
-			return null;
-		}
-
 		private string GetSavePath()
 		{
 			SaveFileDialog saveFileDialog = new SaveFileDialog();
@@ -479,5 +416,80 @@ namespace DerpGen
 
 			return null;
 		}
+		#endregion
+
+		#region Load
+		private void OnLoad(object sender, RoutedEventArgs e)
+		{
+			string loadPath = GetLoadPath();
+
+			if (loadPath != null)
+			{
+				var loadData = SaveManager.Load(loadPath);
+
+				if (loadData != null)
+				{
+					Parameter = loadData;
+					DataContext = Parameter;
+					bgWorker.RunWorkerAsync();
+					outpotLogBox.Items.Add($">> Opened file at {loadPath}");
+				}
+			}
+
+		}
+
+		private string GetLoadPath()
+		{
+			OpenFileDialog openFileDialog = new OpenFileDialog();
+
+			openFileDialog.Filter = "Data File | *.dat";
+			openFileDialog.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+			bool? result = openFileDialog.ShowDialog();
+
+			if (result.HasValue && result.Value)
+			{
+				AddRecentItem(openFileDialog.FileName);
+				return openFileDialog.FileName;
+			}
+
+			return null;
+		}
+		#endregion
+
+		#region Export
+		private void ExportAsPNG(object sender, RoutedEventArgs e)
+		{
+			string path = GetExportPath();
+
+			if (path != null)
+			{
+				using (FileStream fileStream = File.Create(path))
+				{
+					PngBitmapEncoder encoder = new PngBitmapEncoder();
+					encoder.Frames.Add(BitmapFrame.Create(MainImage.Source as BitmapSource));
+					encoder.Save(fileStream);
+					MessageBox.Show("Successfully exported heightmap!", "Success!", MessageBoxButton.OK);
+					outpotLogBox.Items.Add($">> File Exported to {path}");
+				}
+			}
+
+		}
+
+		private string GetExportPath()
+		{
+			SaveFileDialog saveFileDialog = new SaveFileDialog();
+
+			saveFileDialog.Filter = "PNG file | .png";
+			saveFileDialog.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
+			bool? result = saveFileDialog.ShowDialog();
+
+			if (result.HasValue && result.Value)
+			{
+				return saveFileDialog.FileName;
+			}
+
+			return null;
+		}
+		#endregion
 	}
 }
