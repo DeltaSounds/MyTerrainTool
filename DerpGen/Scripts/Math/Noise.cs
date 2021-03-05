@@ -5,7 +5,7 @@ namespace DerpGen
 {
 	public class Noise
 	{
-		public static float[,] GenerateNoiseMap( Parameters parameter, BackgroundWorker bgWorker, bool isAborted)
+		public static float[,] GenerateNoiseMap( Parameters parameter, BackgroundWorker bgWorker)
 		{
 			int mapWidth = parameter.MapSize;
 			int mapHeight = parameter.MapSize;
@@ -63,9 +63,8 @@ namespace DerpGen
 				bgWorker.ReportProgress((int)((float)x / noiseMap.GetLength(0) * 100));
 
 				//On Aborted
-				if(isAborted)
+				if(bgWorker.CancellationPending)
 				{
-					bgWorker.CancelAsync();
 					return null;
 				}
 

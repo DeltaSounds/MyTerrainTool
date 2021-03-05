@@ -20,18 +20,15 @@ namespace DerpGen
 		private static readonly string APPLICATION_NAME = "DerpGen";
 
 		private string _currentFilePath;
-		private static string _configCompanyPath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), COMPANY_NAME);
-		private static string _configApplicationPath = System.IO.Path.Combine(_configCompanyPath, APPLICATION_NAME);
-		private static string _configPath = System.IO.Path.Combine(_configApplicationPath, "config.json");
+		private static string _configCompanyPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), COMPANY_NAME);
+		private static string _configApplicationPath = Path.Combine(_configCompanyPath, APPLICATION_NAME);
+		private static string _configPath = Path.Combine(_configApplicationPath, "config.json");
 		private Config _config;
-
-		private bool _isAborted;
 
 		private readonly BackgroundWorker bgWorker = new BackgroundWorker();
 		private delegate void myDel(WriteableBitmap bitmap);
 
 		public Parameters Parameter = new Parameters();
-		public Renderer Render = new Renderer();
 		public Random random = new Random();
 		public List<string> RecentList = new List<string>();
 
@@ -39,7 +36,6 @@ namespace DerpGen
 		{
 			InitializeComponent();
 			DataContext = Parameter;
-			LoadConfig();
 
 			bgWorker.WorkerReportsProgress = true;
 			bgWorker.WorkerSupportsCancellation = true;
@@ -47,6 +43,9 @@ namespace DerpGen
 			bgWorker.DoWork += new DoWorkEventHandler(RenderImage);
 			bgWorker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(GenerateCompleted);
 			bgWorker.ProgressChanged += new ProgressChangedEventHandler(OnProgressChanged);
+
+
+			LoadConfig();
 		}
 
 		#region Configurations
@@ -60,11 +59,11 @@ namespace DerpGen
 				_config = loadConfig;
 
 				//Check if the configs dimensions are less than min
-				if(_config.Width < MinWidth)
+				if (_config.Width < MinWidth)
 				{
 					_config.Width = (float)MinWidth;
 				}
-				else if(_config.Height < MinHeight)
+				else if (_config.Height < MinHeight)
 				{
 					_config.Height = (float)MinHeight;
 				}
@@ -140,7 +139,7 @@ namespace DerpGen
 			{
 				btnGen.IsEnabled = false;
 				btnAbort.IsEnabled = true;
-				
+
 				if (Parameter.RandomizeSeedOnGenerate)
 				{
 					Parameter.Seed = random.Next(1, int.MaxValue);
@@ -151,7 +150,7 @@ namespace DerpGen
 
 
 			// https://nerdparadise.com/programming/csharpimageediting
-			float[,] noiseMap = Noise.GenerateNoiseMap(Parameter, bgWorker, _isAborted);
+			float[,] noiseMap = Noise.GenerateNoiseMap(Parameter, bgWorker);
 
 			if (bgWorker.CancellationPending)
 			{
@@ -218,6 +217,9 @@ namespace DerpGen
 			{
 				MessageBox.Show("Generation has been terminated!", "Warning!", MessageBoxButton.OK);
 				outpotLogBox.Items.Add(">> Heightmap generation has been terminated!");
+
+				pBar.Value = 0;
+
 				btnGen.IsEnabled = true;
 				btnAbort.IsEnabled = false;
 			}
@@ -242,20 +244,11 @@ namespace DerpGen
 		private void Abort(object sender, RoutedEventArgs e)
 		{
 			bgWorker.CancelAsync();
-			_isAborted = true;
 		}
 
 		private void ClearOutputLog(object sender, RoutedEventArgs e)
 		{
 			outpotLogBox.Items.Clear();
-		}
-
-		private void OnExitApplication(object sender, EventArgs e)
-		{
-			if (_config != null)
-			{
-				ConfigLoader.Save(_config, _configPath);
-			}
 		}
 
 		private void OpenNew(object sender, RoutedEventArgs e)
@@ -340,7 +333,7 @@ namespace DerpGen
 
 			if (result == MessageBoxResult.Yes)
 			{
-				if (File.Exists(item.ToString()))
+				if (File.Exists(item.Header.ToString()))
 				{
 					Parameter = SaveManager.Load(item.Header.ToString());
 					DataContext = Parameter;
@@ -494,5 +487,25 @@ namespace DerpGen
 			return null;
 		}
 		#endregion
+
+		private void Window_Closing(object sender, CancelEventArgs e)
+		{
+			MessageBoxResult result = MessageBox.Show("Are you sure you want to close? Any unsaved changes will be lost!", "Warning!", MessageBoxButton.YesNo);
+
+			if (result == MessageBoxResult.Yes)
+			{
+				e.Cancel = false;
+				return;
+			}
+			else
+			{
+				if (_config != null)
+				{
+					ConfigLoader.Save(_config, _configPath);
+					e.Cancel = true;
+				}
+			}
+
+		}
 	}
 }

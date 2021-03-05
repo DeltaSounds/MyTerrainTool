@@ -5,8 +5,11 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DerpGen"
         mc:Ignorable="d"
+		Closing="Window_Closing"
         Title="DerpGen 1.0" Height="1100" Width="3048" MinWidth="1500" MinHeight="800" Background="#FF6C6C6C" Style="{DynamicResource CustomWindowStyle}">
 
+
+	
 	<Window.Resources>
 		<Style TargetType="Grid" x:Key="DarkBG">
 			<Setter Property="Background" Value="#FF252526"/>

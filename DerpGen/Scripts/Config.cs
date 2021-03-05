@@ -202,8 +202,6 @@ namespace DerpGen
 			}
 		}
 
-		public Vector2 Offset { get => new Vector2(_offsetX, _offsetY); }
-
 		public bool RandomizeSeedOnGenerate
 		{
 			get { return _randomizeSeedOnGenerated; }
